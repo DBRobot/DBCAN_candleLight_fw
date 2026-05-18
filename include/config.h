@@ -486,6 +486,20 @@ THE SOFTWARE.
 	#define NUM_CAN_CHANNEL			 1
 	#define CONFIG_CANFD			 1
 
+#elif defined(BOARD_DBCAN_V1_0)
+	#define USBD_PRODUCT_STRING_FS	 "DBCAN-V1.0 gs_usb"
+	#define USBD_MANUFACTURER_STRING "DBRobot"
+	#define DFU_INTERFACE_STRING_FS	 "DBCAN firmware upgrade interface"
+
+	// #define CONFIG_HSE_OSC_SPEED	 24000000
+	#define TIM2_CLOCK_SPEED		 64000000
+
+	#define CAN_CLOCK_SPEED			 40000000
+	#define NUM_CAN_CHANNEL			 2
+	#define CONFIG_CANFD			 1
+
+	#define CONFIG_TERMINATION       1
+
 /*************** STM32G431 ***************/
 
 	#elif defined(BOARD_CANable2_MKS)

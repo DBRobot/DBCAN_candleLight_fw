@@ -324,6 +324,7 @@ set(TGTG0B1_LIST
 	"budgetcan"
 	"candleLightFD"
 	"nucleo_g0b1re"
+	"DBCAN_V1_0"
 )
 set(TGTG431_LIST
 	"CANable2_MKS"
