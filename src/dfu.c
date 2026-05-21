@@ -35,7 +35,13 @@
 #define SYSMEM_STM32G0B1			   0x1FFF0000
 #define SYSMEM_STM32G4xx			   0x1FFF0000
 
+/* See __initialize_hardware_early — these two live in .bss but are read
+ * BEFORE the copy table zeros .bss, so their RAM contents survive a soft
+ * reset. The clean_boot_marker is set in our forced re-reset path so the
+ * second boot recognizes itself and breaks the loop. */
+#define CLEAN_BOOT_MAGIC               0xC0FFEE5AU
 static uint32_t dfu_reset_to_bootloader_magic;
+static uint32_t clean_boot_marker;
 
 static void dfu_hack_boot_pin_f042(void)
 {
@@ -85,6 +91,22 @@ void __initialize_hardware_early(void)
 				break;
 		}
 	}
+
+	/* Double-reset trick to escape stale state left by the ROM DFU
+	 * bootloader (or anything else) before user firmware runs.
+	 *
+	 * The ROM bootloader's NVIC_SystemReset on `:leave` doesn't fully
+	 * clear the USB peripheral / clock-tree state on STM32G0B1 — host
+	 * enumeration then fails at SET_ADDRESS until a real power cycle.
+	 * By issuing our own NVIC_SystemReset here, before any peripheral
+	 * touches user code, the second boot starts from a reset we own
+	 * and the chip behaves identically to POR.
+	 */
+	if (clean_boot_marker != CLEAN_BOOT_MAGIC) {
+		clean_boot_marker = CLEAN_BOOT_MAGIC;
+		NVIC_SystemReset();
+	}
+	clean_boot_marker = 0U;  /* clear so subsequent power-cycle (random RAM) triggers the workaround again */
 
 	SystemInit();
 }

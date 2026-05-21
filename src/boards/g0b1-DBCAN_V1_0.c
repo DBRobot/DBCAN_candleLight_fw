@@ -1,7 +1,4 @@
 #include "board.h"
-#include "config.h"
-#include "device.h"
-#include "gpio.h"
 #include "stm32g0xx_hal_gpio.h"
 #include "usbd_gs_can.h"
 
@@ -52,8 +49,8 @@ static void dbcan_setup(USBD_GS_CAN_HandleTypeDef *hcan) {
 	GPIO_InitStruct.Alternate = GPIO_AF3_FDCAN1;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    /* FDCAN2_RX, FDCAN2_TX */
-	GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+    /* FDCAN2_RX (PB5), FDCAN2_TX (PB6) */
+	GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6;
 	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

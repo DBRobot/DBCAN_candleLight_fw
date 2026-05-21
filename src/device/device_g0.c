@@ -78,19 +78,6 @@ void device_sysclock_config(void) {
 	};
 	HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);
 
-	/* Trim HSI48 to USB SOF — HSI48 factory trim is not always
-	 * tight enough to meet USB FS ±2500 ppm without runtime sync. */
-	__HAL_RCC_CRS_CLK_ENABLE();
-	RCC_CRSInitTypeDef RCC_CRSInitStruct = {
-		.Prescaler = RCC_CRS_SYNC_DIV1,
-		.Source = RCC_CRS_SYNC_SOURCE_USB,
-		.Polarity = RCC_CRS_SYNC_POLARITY_RISING,
-		.ReloadValue = __HAL_RCC_CRS_RELOADVALUE_CALCULATE(48000000, 1000),
-		.ErrorLimitValue = 34,
-		.HSI48CalibrationValue = 32,
-	};
-	HAL_RCCEx_CRSConfig(&RCC_CRSInitStruct);
-
 	HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
 	HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
