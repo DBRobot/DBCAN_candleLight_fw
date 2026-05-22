@@ -45,7 +45,15 @@ void device_sysclock_config(void) {
 		.HSEState = RCC_HSE_ON,
 		.HSI48State = RCC_HSI48_ON,
 		.PLL.PLLSource = RCC_PLLSOURCE_HSE,
+		.PLL.PLLM = RCC_PLLM_DIV1,
 		.PLL.PLLN = 320000000 / CONFIG_HSE_OSC_SPEED,
+#elif defined(RCC_HSE_BYPASS_SPEED)
+		.OscillatorType = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_HSI48,
+		.HSEState       = RCC_HSE_BYPASS,
+		.HSI48State     = RCC_HSI48_ON,
+		.PLL.PLLSource  = RCC_PLLSOURCE_HSE,
+		.PLL.PLLM       = RCC_PLLM_DIV3,
+		.PLL.PLLN       = 40,
 #else
 		.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSI48,
 		.HSIState = RCC_HSI_ON,
@@ -53,10 +61,10 @@ void device_sysclock_config(void) {
 		.HSIDiv = RCC_HSI_DIV1,
 		.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT,
 		.PLL.PLLSource = RCC_PLLSOURCE_HSI,
+		.PLL.PLLM = RCC_PLLM_DIV1,
 		.PLL.PLLN = 20,
 #endif
 		.PLL.PLLState = RCC_PLL_ON,
-		.PLL.PLLM = RCC_PLLM_DIV1,
 		.PLL.PLLP = RCC_PLLP_DIV2,
 		.PLL.PLLQ = RCC_PLLQ_DIV8,
 		.PLL.PLLR = RCC_PLLR_DIV5,
