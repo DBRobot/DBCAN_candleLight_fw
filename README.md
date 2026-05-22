@@ -49,9 +49,6 @@ cmake --build build --target help
 
 The output binary lands at `build/DBCAN_V1_0_fw.bin`.
 
-## Download Binaries
-Prebuilt binaries can be downloaded by clicking [![CI](https://github.com/candle-usb/candleLight_fw/actions/workflows/ci.yml/badge.svg)](https://github.com/candle-usb/candleLight_fw/actions). On the workflow overview page, select the latest workflow that ran on master branch. The firmware artifacts can downloaded by clicking them at the bottom of the page.
-
 ## Flashing
 
 Flashing uses `dfu-util` over USB.
