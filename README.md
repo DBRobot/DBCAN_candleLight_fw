@@ -1,36 +1,18 @@
-# candleLight_gsusb
-[![Build](https://github.com/candle-usb/candleLight_fw/actions/workflows/ci.yml/badge.svg)](https://github.com/candle-usb/candleLight_fw/actions)
+# DBCAN_candleLight_fw
 
-This is firmware for certain STM32F042x/STM32F072xB-based USB-CAN adapters, notably:
-- candleLight: <https://github.com/HubertD/candleLight> (STM32F072xB)
-- candleLight FD: <https://linux-automation.com/en/products/candlelight-fd.html> (STM32G0B1CBT)
-- candleLight: <https://www.linux-automation.com/en/products/candlelight.html> (STM32F072xB)
-- cantact: <https://www.linklayer.com/tools> (STM32F042C6)
-- canable (cantact clone): <http://canable.io/> (STM32F042C6)
-- USB2CAN: <https://github.com/roboterclubaachen/usb2can> (STM32F042x6)
-- CANAlyze: <https://kkuchera.github.io/canalyze/> (STM32F042C6)
-- VulCAN Gen1: <https://shop.copperforge.cc/products/ac41> (STM32F042x6)
-- Entreé: <https://github.com/tuna-f1sh/entree> (STM32F042x6)
-- CANable-MKS 1.0: <https://github.com/makerbase-mks/CANable-MKS> (STM32F072xB)
-- ConvertDevice-xCAN: <https://github.com/ConvertDevice/xCAN> (STM32F072xB)
-- ConvertDevice-xCANFD: <https://github.com/ConvertDevice/xCANFD> (STM32G0B1CBT6)
-- DSD TECH SH-C30A: <https://www.deshide.com/product-details.html?pid=384242&_t=1671089557> (STM32F072xB)
-- FYSETC UCAN: <https://www.fysetc.com/products/fysetc-ucan-board-based-on-stm32f072-usb-to-can-adapter-support-with-canable-candlelight-klipper-firmware> (STM32F072xB)
-- TouCAN Probe <https://github.com/AndersBNielsen/TouCAN> (STM32F042C6)
-- WeActStudio USB2CANFDV1: https://github.com/WeActStudio/WeActStudio.USB2CANFDV1 (STM32G0B1CBT6)
+A downstream fork of [candleLight_fw](https://github.com/candle-usb/candleLight_fw),
+based on [marckleinebudde's multichannel branch](https://github.com/marckleinebudde/candleLight_fw/tree/multichannel).
 
-Of important note is that the common STM32F103 will NOT work with this firmware because its hardware cannot use both USB and CAN simultaneously.
-Beware also the smaller packages in the F042 series which map a USB and CAN_TX signal on the same pin and are therefore unusable !
+This fork adds:
+- Board support for the **DBRobot DBCAN V1.0** (STM32G0B1KBT6, dual FDCAN)
+- A fix for the STM32G0B1 USB enumeration failure after `dfu-util :leave`
+  (upstream [#195](https://github.com/candle-usb/candleLight_fw/issues/195))
 
-This implements the interface of the mainline linux gs_usb kernel module and
-works out-of-the-box with linux distros packaging this module, e.g. Ubuntu.
+For the list of other supported MCUs and boards, build options, and
+general usage, see the [upstream README](https://github.com/marckleinebudde/candleLight_fw/blob/multichannel/README.md).
+The sections below cover DBCAN-specific build and flash instructions.
 
 ## Limitations
-
-STM32G0B1-based devices are not yet supported by the mainline
-firmware. Support for these devices is discussed in
-https://github.com/candle-usb/candleLight_fw/pull/139 and
-https://github.com/candle-usb/candleLight_fw/pull/176.
 
 STM32G431-based devices (e.g. CANable-MKS 2.0) are not supported by this project yet.
 
@@ -47,58 +29,73 @@ The Firmware also implements WCID USB descriptors and thus can be used on recent
 
 ## Building
 
-Building requires arm-none-eabi-gcc toolchain.
+Requires `cmake` and the `arm-none-eabi-gcc` toolchain.
 
 ```shell
-sudo apt-get install gcc-arm-none-eabi
+sudo apt-get install cmake gcc-arm-none-eabi
 
-mkdir build
-cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/gcc-arm-none-eabi-8-2019-q3-update.cmake
+# Configure (uses the system-installed toolchain on $PATH)
+cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake
 
-# or,
-# cmake-gui ..
-# don't forget to specify the cmake toolchain file before configuring.
-#
-# compile all targets :
+# Build just the DBCAN target
+cmake --build build --target DBCAN_V1_0_fw
 
-make
+# ...or build every supported board
+cmake --build build
 
-# OR, each board target is a cmake option and can be disabled before running 'make';
-# OR, compile a single target , e.g.
-make cantact_fw
-
-#
-# to list possible targets :
-make help
-
+# To list all available targets
+cmake --build build --target help
 ```
+
+The output binary lands at `build/DBCAN_V1_0_fw.bin`.
 
 ## Download Binaries
 Prebuilt binaries can be downloaded by clicking [![CI](https://github.com/candle-usb/candleLight_fw/actions/workflows/ci.yml/badge.svg)](https://github.com/candle-usb/candleLight_fw/actions). On the workflow overview page, select the latest workflow that ran on master branch. The firmware artifacts can downloaded by clicking them at the bottom of the page.
 
 ## Flashing
 
-Flashing candleLight on linux: (source: [https://cantact.io/cantact/users-guide.html](https://cantact.io/cantact/users-guide.html))
-- Flashing requires the dfu-util tool. On Ubuntu, this can be installed with `sudo apt install dfu-util`.
-- compile as above, or download the current binary release: gsusb_cantact_8b2b2b4.bin
-- If dfu-util fails due to permission issues on Linux, you may need additional udev rules. Consult your distro's documentation and see `70-candle-usb.rules` provided here.
+Flashing uses `dfu-util` over USB.
 
-### recommended simple method
-- If compiling with cmake, `make flash-<targetname_fw>`, e.g. `make flash-canable_fw`, to invoke dfu-util.
+```shell
+sudo apt install dfu-util
+```
 
-### method for reflashing a specific device by serial
-- when multiple devices are connected, dfu-util may be unable to choose which one to flash.
-- Obtain device's serial # by looking at `dfu-util -l`
-- adapt the following command accordingly :
- `dfu-util -D CORRECT_FIRMWARE.bin -S "serial_number_here", -a 0 -s 0x08000000:leave`
-- note, the `:leave` suffix above may not be supported by older builds of dfu-util and is simply a convenient way to reboot into the normal firmware.
+### One-time setup: install the udev rule
 
-### fail-safe method (or if flashing a blank device)
-- Disconnect the USB connector from the CANtact, short the BOOT pins, then reconnect the USB connector. The device should enumerate as "STM32 BOOTLOADER".
+Lets `dfu-util` talk to a running adapter without `sudo`:
 
-- invoke dfu-util manually with: `sudo dfu-util --dfuse-address -d 0483:df11 -c 1 -i 0 -a 0 -s 0x08000000 -D CORRECT_FIRMWARE.bin` where CORRECT_FIRMWARE is the name of the desired .bin.
-- Disconnect the USB connector, un-short the BOOT pins, and reconnect.
+```shell
+sudo cp 70-candle-usb.rules /etc/udev/rules.d/
+sudo udevadm control --reload
+sudo udevadm trigger
+```
+
+### Flashing an already-running adapter
+
+```shell
+# Reboot the running firmware into its DFU bootloader
+dfu-util -d 1d50:606f -e
+
+# Wait a moment for the ROM bootloader to enumerate as 0483:df11, then flash
+sudo dfu-util -d 0483:df11 -a 0 -s 0x08000000:leave -D build/DBCAN_V1_0_fw.bin
+```
+
+This fork includes a fix for the STM32G0B1 DFU-leave bug, so the board
+re-enumerates cleanly after `:leave` — no unplug/replug needed.
+
+The CMake-generated convenience target wraps both commands:
+
+```shell
+cmake --build build --target flash-DBCAN_V1_0_fw
+```
+
+### Reflashing a specific device when several are connected
+
+```shell
+dfu-util -l                    # find the right serial number
+sudo dfu-util -d 0483:df11 -S <serial> -a 0 -s 0x08000000:leave \
+    -D build/DBCAN_V1_0_fw.bin
+```
 
 
 
@@ -106,27 +103,27 @@ Flashing candleLight on linux: (source: [https://cantact.io/cantact/users-guide.
 With udev on linux, it is possible to assign a device name to a certain serial number (see udev manpages and [systemd.link](https://www.freedesktop.org/software/systemd/man/systemd.link.html)).
 This can be useful when multiple devices are connected at the same time.
 
-An example configuration :
+An example for a DBCAN V1.0 adapter:
 
 ```
  $ cat /etc/systemd/network/60-persistent-candev.link
 [Match]
-Property=ID_MODEL=cannette_gs_usb ID_SERIAL_SHORT="003800254250431420363230"
+Property=ID_MODEL=DBCAN-V1.0_gs_usb ID_SERIAL_SHORT="004E002E4156501720383937"
 
 [Link]
 # from systemd.link manpage:
 # Note that specifying a name that the kernel might use for another interface (for example "eth0") is dangerous because the name assignment done by udev will race with the assignment done by the kernel, and only one
 #   interface may use the name. Depending on the order of operations, either udev or the kernel will win, making the naming unpredictable. It is best to use some different prefix
 
-Name=cannette99
+Name=dbcan0
 ```
 
-( The serial number can be found with the `lsusb` utility). After reloading systemd units and resetting this board :
+(Find the serial number with `lsusb -v -d 1d50:606f | grep iSerial` or `udevadm info /sys/class/net/can0`.) After reloading systemd units and re-plugging the board:
 
 ```
  $ ip a
 ....
-59: cannette99: <NOARP,ECHO> mtu 16 qdisc noop state DOWN group default qlen 10
+59: dbcan0: <NOARP,ECHO> mtu 16 qdisc noop state DOWN group default qlen 10
     link/can
  $
 ```
@@ -153,9 +150,3 @@ For example, openocd has the `profile` command (see https://openocd.org/doc/html
 (from inside gdb, the command needs to be prefixed with `monitor` to forward it to openocd, i.e. `monitor profile 5 .....`.
 
 The .out file can then be processed with `gprof <firmware_name> -l test.out`
-
-
-
-## Links to related projects
-* [Cangaroo](https://github.com/HubertD/cangaroo) open source can bus analyzer software
-* [Candle.NET](https://github.com/elliotwoods/Candle.NET) .NET wrapper for the candle API
